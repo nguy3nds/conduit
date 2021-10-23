@@ -52,7 +52,7 @@ function App() {
   }, [user]);
 
   return (
-    <Router>
+    <Router basename={process.env.PUBLIC_URL}>
       <Header userToken={loginState} />
       <Switch>
         <Route exact path="/">
