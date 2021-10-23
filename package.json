@@ -1,6 +1,6 @@
 {
   "name": "mock-blog-app",
-  "homepage": "http://nguy3nds.github.io/conduit/index.html",
+  "homepage": "http://nguy3nds.github.io/conduit/",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
