@@ -1,4 +1,4 @@
-import React, {
+import {
   ChangeEvent,
   KeyboardEvent,
   SyntheticEvent,
@@ -15,12 +15,10 @@ import { FormProps, FormValues, Slug } from "./interface";
 function Editor(props: InjectedFormikProps<FormProps, FormValues>) {
   const [input, setInput] = useState("");
   const [tags, setTags] = useState<String[]>([]);
-  const [isKeyReleased, setIsKeyReleased] = useState(false);
   const token = window.localStorage.getItem("jwtToken");
   const { slug } = useParams<Slug>();
   const { setFieldValue } = props;
   const history = useHistory();
-
   const handleSubmit = (e: SyntheticEvent) => {
     e.preventDefault();
     if (!slug) {
@@ -44,10 +42,6 @@ function Editor(props: InjectedFormikProps<FormProps, FormValues>) {
         setFieldValue("content", article.body);
         setTags(article.tagList);
       });
-    } else {
-      setFieldValue("title", "");
-      setFieldValue("description", "");
-      setFieldValue("content", "");
     }
   }, [slug, setFieldValue]);
 
@@ -73,8 +67,6 @@ function Editor(props: InjectedFormikProps<FormProps, FormValues>) {
       setTags(tagsCopy);
       setInput(poppedTag);
     }
-
-    setIsKeyReleased(false);
   };
 
   const onChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -82,9 +74,7 @@ function Editor(props: InjectedFormikProps<FormProps, FormValues>) {
     setInput(value);
   };
 
-  const onKeyUp = () => {
-    setIsKeyReleased(true);
-  };
+  const onKeyUp = () => {};
 
   return (
     <div className="editor-page">
@@ -130,7 +120,7 @@ function Editor(props: InjectedFormikProps<FormProps, FormValues>) {
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="Write your tag"
+                    placeholder={slug ? "Don't change tags" : "Enter tags"}
                     value={input}
                     onKeyDown={onKeyDown}
                     onChange={onChange}

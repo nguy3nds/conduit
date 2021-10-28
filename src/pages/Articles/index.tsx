@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { useHistory, useParams } from "react-router";
 import { NavLink } from "react-router-dom";
-import { Article, Profile } from "../../interfaces";
 import { userByToken } from "../../apis";
-
 import {
   deleteFavorite,
   postFavorite,
@@ -13,76 +11,105 @@ import {
   deleteArticle,
   deleteFollowing,
   getArticle,
+  getArticleNoToken,
   postFollowing,
 } from "./apis";
 import { AxiosResponse } from "axios";
+import Comment from "./Components/Comment";
+import AlertDialog from "../../components/Modals/AlertDialog";
 
 export default function Articles() {
   const { slug }: any = useParams();
-  const token = window.localStorage.getItem("jwtToken");
-  const [article, setArticle] = useState<Article>();
+  const token = window.localStorage.getItem("jwtToken") as string;
+  const [article, setArticle] = useState<any>();
   const [checkAuthor, setCheckAuthor] = useState(false);
-  const [likeCount, setLikeCount] = useState<number | undefined>(
-    article?.favoritesCount
-  );
+  const [likeCount, setLikeCount] = useState<number>(article?.favoritesCount);
   const [likeState, setLikeState] = useState<boolean>();
-  const history = useHistory();
   const [followState, setFollowState] = useState<boolean>();
-  useEffect(() => {
-    getArticle(slug, token).then((responseArticle) => {
-      console.log(responseArticle);
-      setArticle(responseArticle.data.article);
-      setLikeState(responseArticle.data.article?.favorited);
-      setLikeCount(responseArticle.data.article?.favoritesCount);
-      userByToken(token).then((responseUser) => {
-        if (
-          responseUser.data.user.username ==
-          responseArticle.data.article.author.username
-        )
-          setCheckAuthor(true);
-        else setCheckAuthor(false);
-      });
-      getProfile(token, responseArticle.data.article.author.username).then(
-        (res: AxiosResponse<any | Profile>) => {
-          if (res.data.profile.following) setFollowState(true);
-          else setFollowState(false);
-        }
-      );
-    });
-  }, [slug]);
+  const [open, setOpen] = useState(false);
+  const history = useHistory();
 
-  const handleFavorite = (slug: string | undefined) => {
+  useEffect(() => {
+    if (token) {
+      getArticle(slug, token).then((responseArticle) => {
+        setArticle(responseArticle.data.article);
+        setLikeState(responseArticle.data.article?.favorited);
+        setLikeCount(responseArticle.data.article?.favoritesCount);
+        userByToken(token).then((responseUser) => {
+          if (
+            responseUser.data.user.username ==
+            responseArticle.data.article.author.username
+          )
+            setCheckAuthor(true);
+          else setCheckAuthor(false);
+        });
+        getProfile(token, responseArticle.data.article.author.username).then(
+          (res: AxiosResponse<any>) => {
+            if (res.data.profile.following) setFollowState(true);
+            else setFollowState(false);
+          }
+        );
+      });
+    } else {
+      getArticleNoToken(slug).then((res: any) => {
+        setArticle(res.data.article);
+      });
+    }
+  }, [slug, token]);
+
+  const handleFavorite = (slug: string) => {
     if (likeState) {
       deleteFavorite(token, slug).then((res: any) => {
         setLikeCount(res.data.article?.favoritesCount);
         setLikeState(false);
       });
     } else {
-      postFavorite(token, slug).then((res) => {
+      postFavorite(token, slug).then((res: any) => {
         setLikeCount(res.data.article?.favoritesCount);
         setLikeState(true);
       });
     }
   };
-  const handleFollowing = (username: string | undefined) => {
+  const handleFollowing = (username: string) => {
     if (followState) {
-      deleteFollowing(token, username).then((res) => {
+      deleteFollowing(token, username).then((res: any) => {
+        // setLikeCount(res.data.article?.favoritesCount);
+
         setFollowState(false);
       });
     } else {
-      postFollowing(token, username).then((res) => {
+      postFollowing(token, username).then((res: any) => {
+        // setLikeCount(res.data.article?.favoritesCount);
+
         setFollowState(true);
       });
     }
   };
   const handleDelete = () => {
+    setOpen(true);
+  };
+
+  const handleAgree = () => {
     deleteArticle(slug, token).then((res) => {
       history.push("");
     });
+    handleClose();
+  };
+
+  const handleClose = () => {
+    setOpen(false);
   };
 
   return (
     <div className="article-page">
+      <AlertDialog
+        open={open}
+        setOpen={setOpen}
+        slug={slug}
+        token={token}
+        handleAgree={handleAgree}
+        handleClose={handleClose}
+      />
       <div className="banner">
         <div className="container">
           <h1>{article?.title}</h1>
@@ -139,7 +166,11 @@ export default function Articles() {
                     </button>
                     &nbsp;&nbsp;
                     <button
-                      className="btn btn-sm btn-outline-primary"
+                      className={
+                        likeState
+                          ? "btn btn-sm btn-primary"
+                          : "btn btn-sm btn-outline-primary"
+                      }
                       onClick={() => handleFavorite(article?.slug)}
                     >
                       {likeState ? <i></i> : <i className="ion-heart"></i>}
@@ -157,7 +188,7 @@ export default function Articles() {
       </div>
       <div className="container page">
         <div className="row article-content">
-          <div className="col-md-12">
+          <div className="col-xs-12">
             <p>{article?.body}</p>
           </div>
         </div>
@@ -173,76 +204,11 @@ export default function Articles() {
           ))}
         </div>
         <hr />
-        <div className="row">
-          <div className="col-xs-12 col-md-8 offset-md-2">
-            <form className="card comment-form">
-              <div className="card-block">
-                <textarea
-                  className="form-control"
-                  placeholder="Write a comment..."
-                  rows={3}
-                ></textarea>
-              </div>
-              <div className="card-footer">
-                <img
-                  src="http://i.imgur.com/Qr71crq.jpg"
-                  className="comment-author-img"
-                  alt=""
-                />
-                <button className="btn btn-sm btn-primary">Post Comment</button>
-              </div>
-            </form>
-            <div className="card">
-              <div className="card-block">
-                <p className="card-text">
-                  With supporting text below as a natural lead-in to additional
-                  content.
-                </p>
-              </div>
-              <div className="card-footer">
-                <a href="" className="comment-author">
-                  <img
-                    src="http://i.imgur.com/Qr71crq.jpg"
-                    className="comment-author-img"
-                    alt=""
-                  />
-                </a>
-                &nbsp;
-                <a href="" className="comment-author">
-                  Jacob Schmidt
-                </a>
-                <span className="date-posted">Dec 29th</span>
-              </div>
-            </div>
-            <div className="card">
-              <div className="card-block">
-                <p className="card-text">
-                  With supporting text below as a natural lead-in to additional
-                  content.
-                </p>
-              </div>
-              <div className="card-footer">
-                <a href="" className="comment-author">
-                  <img
-                    src="http://i.imgur.com/Qr71crq.jpg"
-                    className="comment-author-img"
-                    alt=""
-                  />
-                </a>
-                &nbsp;
-                <a href="" className="comment-author">
-                  Jacob Schmidt
-                </a>
-                <span className="date-posted">Dec 29th</span>
-                <span className="mod-options">
-                  <i className="ion-edit"></i>
-                  <i className="ion-trash-a"></i>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <Comment slug={slug} />
       </div>
+      {/* <Route path="/editor/:slug">
+        <Editor />
+      </Route> */}
     </div>
   );
 }

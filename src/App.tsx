@@ -19,11 +19,11 @@ import SignUp from "./pages/SignUp";
 import GuardedRoute from "./components/Route/GaurdRoute";
 import { saveUserInStore } from "./redux/actions";
 import { userByToken } from "./apis";
-// import { RootState } from ".";
+import { RootState } from ".";
 
 function App() {
   const dispatch = useDispatch();
-  const user = useSelector((state: any) => state?.user?.data);
+  const user = useSelector((state: RootState) => state?.user?.data);
   const [loginState, setLoginState] = useState<boolean>(false);
   const token = window.localStorage.getItem("jwtToken");
 
@@ -45,12 +45,6 @@ function App() {
     }
   }, [user]);
 
-  useEffect(() => {
-    document.title = user?.username
-      ? `@${user?.username} - Conduit`
-      : "Conduit";
-  }, [user]);
-
   return (
     <Router basename={process.env.PUBLIC_URL}>
       <Header userToken={loginState} />
@@ -64,6 +58,11 @@ function App() {
         <Route path="/register">
           <SignUp />
         </Route>
+        <GuardedRoute
+          path="/register"
+          auth={!window.localStorage.getItem("jwtToken")}
+          Component={SignUp}
+        ></GuardedRoute>
         <GuardedRoute
           exact
           path="/editor"
@@ -81,12 +80,7 @@ function App() {
           Component={Settings}
         ></GuardedRoute>
         <GuardedRoute
-          path={`/profile`}
-          auth={window.localStorage.getItem("jwtToken")}
-          Component={Profile}
-        ></GuardedRoute>
-        <GuardedRoute
-          path={`/profile/${user.username}`}
+          path={`/profile/:slug`}
           auth={window.localStorage.getItem("jwtToken")}
           Component={Profile}
         ></GuardedRoute>

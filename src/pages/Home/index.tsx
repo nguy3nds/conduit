@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { Article } from "../../interfaces";
 import {
@@ -10,10 +10,9 @@ import ArticlePreview from "./components/ArticlePreview";
 import Tags from "./components/Tags";
 import {
   getArticleByTag,
-  getArticleByTagNoToken,
   getTags,
+  getArticleByTagNoToken,
 } from "./components/Tags/apis";
-import { Row } from "react-bootstrap";
 import Paginate from "../../components/Paginate";
 import { LIMIT } from "../../constant";
 
@@ -23,30 +22,44 @@ export default function Home({ userToken }: { userToken: boolean }) {
   const [count, setCount] = useState(0);
   const [offset, setOffset] = useState(0);
   const [currentPage, setCurrentPage] = useState<number>(1);
-
+  // loading
+  const [loading, setLoading] = useState(true);
+  //
   const [tags, setTags] = useState<String[]>([]);
   const [tagName, setTagName] = useState<String>("");
+
   const token = window.localStorage.getItem("jwtToken");
   const [nameApiToLoad, setNameApiToLoad] = useState("Global");
 
   useEffect(() => {
-    setOffset(currentPage - 1);
+    setOffset((currentPage - 1) * LIMIT);
   }, [currentPage]);
 
   const handleClickYourFeed = () => {
-    setNameApiToLoad("Your");
-    setTagName("");
-    console.log("Run your feed");
+    if (nameApiToLoad !== "Your") {
+      setLoading(true);
+      setNameApiToLoad("Your");
+      setTagName("");
+      setCurrentPage(1);
+    }
   };
 
   const handleClickGlobalFeed = () => {
-    setNameApiToLoad("Global");
-    setTagName("");
+    if (nameApiToLoad !== "Global") {
+      setLoading(true);
+      setNameApiToLoad("Global");
+      setTagName("");
+      setCurrentPage(1);
+    }
   };
 
   const getArticlesByTag = (tag: String) => {
-    setTagName(tag);
-    setNameApiToLoad("Tags");
+    if (tag !== tagName) {
+      setLoading(true);
+      setTagName(tag);
+      setNameApiToLoad("Tags");
+      setCurrentPage(1);
+    }
   };
 
   useEffect(() => {
@@ -55,6 +68,7 @@ export default function Home({ userToken }: { userToken: boolean }) {
         yourArticles(token, offset).then((res) => {
           setFeeds(res.data.articles);
           setCount(res.data.articlesCount);
+          setLoading(false);
         });
         break;
 
@@ -63,27 +77,31 @@ export default function Home({ userToken }: { userToken: boolean }) {
           globalArticles(token, offset).then((res) => {
             setFeeds(res.data.articles);
             setCount(res.data.articlesCount);
+            setLoading(false);
           });
         } else {
           globalArticlesNoToken(offset).then((res) => {
             setFeeds(res.data.articles);
             setCount(res.data.articlesCount);
+            setLoading(false);
           });
         }
         break;
 
       case "Tags":
         if (token) {
-          getArticleByTag(tagName, token).then((res) => {
+          getArticleByTag(tagName, token, offset).then((res) => {
             setFeeds(res.data.articles);
             setCount(res.data.articlesCount);
             setTagName(tagName);
+            setLoading(false);
           });
         } else {
-          getArticleByTagNoToken(tagName).then((res) => {
+          getArticleByTagNoToken(tagName, offset).then((res) => {
             setFeeds(res.data.articles);
             setCount(res.data.articlesCount);
             setTagName(tagName);
+            setLoading(false);
           });
         }
         break;
@@ -102,14 +120,17 @@ export default function Home({ userToken }: { userToken: boolean }) {
 
   const onSelectedPage = (pageNum: number) => {
     setCurrentPage(pageNum);
+    setLoading(true);
   };
 
   const onPrev = () => {
     setCurrentPage(currentPage - 1);
+    setLoading(true);
   };
 
   const onNext = () => {
     setCurrentPage(currentPage + 1);
+    setLoading(true);
   };
 
   return (
@@ -122,7 +143,7 @@ export default function Home({ userToken }: { userToken: boolean }) {
       </div>
       <div className="container page">
         <div className="row">
-          <div className="col-md-9">
+          <div className="col-md-9 col-xs-12">
             <div className="feed-toggle">
               <ul className="nav nav-pills outline-active">
                 {token ? (
@@ -176,18 +197,29 @@ export default function Home({ userToken }: { userToken: boolean }) {
                 )}
               </ul>
             </div>
-            <ArticlePreview feeds={feeds} />
-
-            {count > LIMIT && (
-              <Row style={{ display: "flex", justifyContent: "center" }}>
-                <Paginate
-                  pageNumber={Math.ceil(count / LIMIT)}
-                  currentPage={currentPage}
-                  onSelectPage={onSelectedPage}
-                  handlePrev={onPrev}
-                  handleNext={onNext}
-                />
-              </Row>
+            {loading ? (
+              <div>Loading...</div>
+            ) : (
+              <div>
+                <ArticlePreview feeds={feeds} />
+                {count > LIMIT && (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      width: "100%",
+                    }}
+                  >
+                    <Paginate
+                      pageNumber={Math.ceil(count / LIMIT)}
+                      currentPage={currentPage}
+                      onSelectPage={onSelectedPage}
+                      handlePrev={onPrev}
+                      handleNext={onNext}
+                    />
+                  </div>
+                )}
+              </div>
             )}
           </div>
           <Tags tags={tags} getArticlesByTag={getArticlesByTag} />

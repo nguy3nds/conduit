@@ -1,7 +1,7 @@
-import React, { SyntheticEvent, useEffect, useState } from "react";
+import { SyntheticEvent, useState } from "react";
 import { withFormik, InjectedFormikProps } from "formik";
 import * as Yup from "yup";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { useHistory } from "react-router-dom";
 import { postUserSignUp } from "../../apis";
 import { saveUserInStore } from "../../../../redux/actions";
@@ -10,7 +10,7 @@ import { FormProps, FormValues } from "./interface";
 function FormSignUp(props: InjectedFormikProps<FormProps, FormValues>) {
   const dispatch = useDispatch();
   const history = useHistory();
-  const [error, setError] = useState();
+  const [error, setError] = useState<any>();
 
   const handleSubmit = (e: SyntheticEvent) => {
     e.preventDefault();
@@ -18,14 +18,19 @@ function FormSignUp(props: InjectedFormikProps<FormProps, FormValues>) {
 
     postUserSignUp({ username, email, password })
       .then((res) => {
-        const user = res.data.user;
+        const user = res.data?.user;
         dispatch(saveUserInStore.saveUserInStoreSuccess(user));
         window.localStorage.setItem("jwtToken", user.token);
         history.push("/");
       })
       .catch((e) => {
-        const errorObject = { ...e.response.data.errors };
-        setError(errorObject);
+        const errorObject = { ...e.response?.data?.errors };
+        if (errorObject.hasOwnProperty("username")) setError(errorObject);
+        else {
+          if (errorObject.error?.keyPattern.hasOwnProperty("username"))
+            setError({ errors: "Username is already taken" });
+          else setError({ errors: "Email is already taken" });
+        }
       });
   };
 
@@ -36,9 +41,7 @@ function FormSignUp(props: InjectedFormikProps<FormProps, FormValues>) {
           Object.keys(error).map((obj, i) => {
             return (
               <div key={i}>
-                <p className="error-messages">
-                  {obj} {error[obj]}
-                </p>
+                <p className="error-messages">* {error[obj]}</p>
               </div>
             );
           })}

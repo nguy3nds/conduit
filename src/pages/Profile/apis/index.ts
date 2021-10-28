@@ -1,10 +1,10 @@
 import axios from "axios";
 import { URL } from "../../../apis";
 import { LIMIT } from "../../../constant";
-import { DataArticles } from "../../../interfaces";
+import { DataArticles, DataUser } from "../../../interfaces";
 
 export const myArticles = (
-  author: string,
+  author: string | undefined,
   token: string | null,
   offset: number
 ) =>
@@ -19,7 +19,7 @@ export const myArticles = (
   );
 
 export const favoritedArticles = (
-  author: string,
+  author: string | undefined,
   token: string | null,
   offset: number
 ) =>
@@ -33,10 +33,17 @@ export const favoritedArticles = (
     }
   );
 
-export const getProfile = (token: string | null, username: string) =>
-  axios.get(`${URL}/api/profiles/${username}`, {
+export const getProfile = (token: any, username: any) =>
+  axios.get<DataUser>(`${URL}/api/profiles/${username}`, {
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
+    },
+  });
+
+export const getProfileNoToken = (username: string) =>
+  axios.get<DataUser>(`${URL}/api/profiles/${username}`, {
+    headers: {
+      "Content-Type": "application/json",
     },
   });

@@ -7,12 +7,15 @@ import { createStore, applyMiddleware } from "redux";
 import createSagaMiddleware from "redux-saga";
 import mySaga from "./redux/sagas";
 import reducers from "./redux/reducers";
-// import { composeWithDevTools } from "redux-devtools-extension";
+// import "bootstrap/dist/css/bootstrap.min.css";
+// import "antd/dist/antd.css";
 
 const sagaMiddleware = createSagaMiddleware();
 
 const store = createStore(reducers, applyMiddleware(sagaMiddleware));
+
 export type RootState = ReturnType<typeof store.getState>;
+
 sagaMiddleware.run(mySaga);
 
 ReactDOM.render(
