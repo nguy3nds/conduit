@@ -22,12 +22,11 @@ code {
     top: 60px;
     margin-bottom: 60px;
   }
-}
-
-.header-custom {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  background-color: white;
+  .header-custom {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: white;
+  }
 }
