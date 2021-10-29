@@ -30,7 +30,7 @@ code {
     background-color: white;
     z-index: 1;
   }
-  .header-custom + auth-page {
+  .header-custom + .auth-page {
     position: relative;
     top: 60px;
     margin-bottom: 60px;
